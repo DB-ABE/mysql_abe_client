@@ -5,10 +5,10 @@
 #include <iostream>
 using std::string;
 // include the sql parser
-#include "SQLParser.h"
+// #include "SQLParser.h"
 
 // contains printing utilities
-#include "util/sqlhelper.h"
+// #include "util/sqlhelper.h"
 
 int main(int argc, char* argv[]) {
     string real_sql = "insert into company.kejibu values(\"1\",abe_enc(\"data\",\"policy\"))";

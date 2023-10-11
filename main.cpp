@@ -1,6 +1,7 @@
-#include "my_utils/cxxopts.hpp"
-#include "SQLParser.h"
-#include "util/sqlhelper.h"
+// #include "my_utils/cxxopts.hpp"
+// #include "my_utils/config.hpp"
+// #include "SQLParser.h"
+// #include "util/sqlhelper.h"
 #include <mysql++.h>
 #include <string>
 #include <iostream>
@@ -8,39 +9,25 @@
 #include <cstdlib>
 #include <csignal>
 #include <vector>
+#include <map>
+
+
+#include <iostream>
+#include <string>
+#include <cassert>
+#include <openabe/openabe.h>
+#include <openabe/zsymcrypto.h>
+
+using namespace oabe;
+using namespace oabe::crypto;
+
 
 #include "rewrite.h"
+#include "abe_crypto.h"
+#include "parameters.h"
 
 using std::string;
 
-//解析命令行参数
-cxxopts::ParseResult parse_opt(int argc, char *argv[]){
-    cxxopts::Options options("abe_client", "A demo of abe client for mysql");
-
-    options.add_options()
-        ("u,username", "username of database server", cxxopts::value<string>())
-        ("p,password", "password of the user", cxxopts::value<string>())
-        ("h,host", "the hostname of the database server", cxxopts::value<string>()->default_value("127.0.0.1"))
-        ("P,port", "the port of the database server", cxxopts::value<unsigned int>()->default_value("3306"))
-        ("D,database", "the database you want to connect", cxxopts::value<string>()->default_value("mysql"))
-        ("help", "print this usage info")
-    ;
-
-    auto result = options.parse(argc, argv);
-
-    if (result.count("help"))
-    {
-      std::cout << options.help() << std::endl;
-      exit(0);
-    }
-
-    if(result.count("username") == 0 || result.count("password") == 0){
-        std::cerr << "error: both -u/--username and -p/--password are required." << std::endl;
-        std::cout << options.help() << std::endl;
-        exit(0);
-    }
-    return result;
-}
 
 //捕获ctrl+c
 void handle_signal(int signal) {
@@ -51,23 +38,35 @@ void handle_signal(int signal) {
     }
 }
 
+
+// std::map<std::string, std::string> config = get_configs("config.txt");
 int main(int argc, char *argv[])
 {
     std::signal(SIGINT, handle_signal);
 
-    auto opts = parse_opt(argc, argv);
+    struct parameters params;
+    read_config_file(params);
+    read_opt(params, argc, argv);
 
-    string username, password, host, database;
-    unsigned int port;
-    username = opts["username"].as<string>();
-    password = opts["password"].as<string>();
-    host = opts["host"].as<string>();
-    port = opts["port"].as<unsigned int>();
-    database = opts["database"].as<string>();
+    
+    abe_crypto my_abe("user1");//暂时使用user1，之后需要通过select current_user()获取
+    if(!my_abe.init(params.abe_pp_path, params.abe_key_path)){
+        return 1;
+    }
+    string temp_pt, temp_ct;
+    temp_pt = "abcdefg";
+    my_abe.encrypt(temp_pt, "attr1 and (attr2 or attr3)", temp_ct);
+    string temp_data;
+    my_abe.decrypt(temp_ct, temp_data);
+    std::cout << "解密成功：" << temp_data << std::endl;
+
+
+    
 
     std::string input;
     mysqlpp::Connection conn(false);
-    if (!conn.connect(database.c_str(), host.c_str(), username.c_str(), password.c_str(), port)){
+    if (!conn.connect(params.database.c_str(), params.host.c_str(), params.username.c_str(),
+         params.password.c_str(), params.port)){
         std::cerr << "DB connection failed: " << conn.error() << std::endl;
         return 1;
     }

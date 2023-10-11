@@ -1,0 +1,8 @@
+base_dir=./data/
+cacert_path=certs/cacert
+cert_path=certs/cert
+rsa_sk_path=certs/rsa_sk
+abe_key_path=abe/key0
+abe_pp_path=abe/mpk
+abe_kms_ip=1.2.3.4
+abe_kms_port=1234

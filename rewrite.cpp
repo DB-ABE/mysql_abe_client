@@ -56,18 +56,22 @@ bool rewrite_plan::parse_and_rewrite(string &real_sql){
     }else if (firstWord == "select"){
         is_select = true;
         std::cout << "select statement" << std::endl;
-         std::regex pattern = std::regex(ABE_DEC_SQL_REGEX);
+        std::regex pattern = std::regex(ABE_DEC_SQL_REGEX);
         std::smatch result;
         bool isMatch = std::regex_match(sql, result, pattern);
-        if (isMatch) {
-            is_dec = true;//需要解密
-
-            //abe_dec只有一个参数，field_name
-            dec_plan.field_name = result[1];
-            std::regex pattern_dec = std::regex(ABE_DEC_REGEX);
-            real_sql = std::regex_replace(sql, pattern_dec, dec_plan.field_name);
-	        std::cout << "after replace: " << real_sql << std::endl;
+        if (!isMatch){  //正常语句，无需重写
+            real_sql = sql;
+            is_dec = true;
+            return true;
         }
+        
+        is_dec = true;//需要解密
+
+        //abe_dec只有一个参数，field_name
+        dec_plan.field_name = result[1];
+        std::regex pattern_dec = std::regex(ABE_DEC_REGEX);
+        real_sql = std::regex_replace(sql, pattern_dec, dec_plan.field_name);
+        std::cout << "after replace: " << real_sql << std::endl;
         return true;
 
     }else{
