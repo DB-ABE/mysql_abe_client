@@ -1,8 +1,11 @@
 // #include "SQLParser.h"
 // #include "util/sqlhelper.h"
+#ifndef REWRITE_H
+#define REWRITE_H
 #include <string>
 #include <iostream>
 #include <vector>
+#include "abe_crypto.h"
 
 using std::string;
 
@@ -39,6 +42,11 @@ public:
         return is_dec;
     }
 
+    bool set_crypto(struct abe_crypto &c){
+        crypto = &c;
+        return true;
+    }
+
     //需要解密的列名
     std::vector<string> field_name_list() const {
         std::vector<string> list;
@@ -46,6 +54,7 @@ public:
         return list;
     }
 
+    struct abe_crypto * crypto; //abe算法
 
 private:
     bool is_select; //true:查询，包括select/show，需要输出查询结果，false:其它语句
@@ -60,6 +69,8 @@ private:
 
     //解密需要：
     struct dec_field dec_plan;
+
     
 
 };
+#endif

@@ -53,15 +53,6 @@ int main(int argc, char *argv[])
     if(!my_abe.init(params.abe_pp_path, params.abe_key_path)){
         return 1;
     }
-    string temp_pt, temp_ct;
-    temp_pt = "abcdefg";
-    my_abe.encrypt(temp_pt, "attr1 and (attr2 or attr3)", temp_ct);
-    string temp_data;
-    my_abe.decrypt(temp_ct, temp_data);
-    std::cout << "解密成功：" << temp_data << std::endl;
-
-
-    
 
     std::string input;
     mysqlpp::Connection conn(false);
@@ -81,6 +72,7 @@ int main(int argc, char *argv[])
         //1. 解析sql语句并根据需要重写
         std::string real_sql;
         rewrite_plan my_rewrite_plan(input);
+        my_rewrite_plan.set_crypto(my_abe);
         my_rewrite_plan.parse_and_rewrite(real_sql);
 
         //2. 执行sql语句得到结果
@@ -112,13 +104,13 @@ int main(int argc, char *argv[])
                         res.field_name(j))  != field_name_list.end()){
                         //在要解密的列表中，需解密输出
                         //注意mysql++的row[j]并非是std::string，而是其自己实现的String类，需做一定的转换
-                        // string plaintext = row[j];  
-                        std::cout << res.field_name(j) << "(decrypted):\t" << row[j] << std::endl;
+                        string ct(row[j].c_str());  
+                        string pt;
+                        my_rewrite_plan.crypto->decrypt(ct,pt);
+                        std::cout << res.field_name(j) << "(decrypted):\t" << pt << std::endl;
                     }else{
                         std::cout << res.field_name(j) << ":\t" << row[j] << std::endl;
                     }
-
-
 
                 }
                 i++;

@@ -1,3 +1,5 @@
+#ifndef ABE_CRYPTO_H
+#define ABE_CRYPTO_H
 #include <string.h>
 #include <fstream>
 #include <openabe/openabe.h>
@@ -28,3 +30,4 @@ private:
     string mpk;
     struct abe_user user;
 };
+#endif
