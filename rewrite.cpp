@@ -12,10 +12,26 @@ using std::string;
 * 文本内容理论要求：不能为空
 *　policy理论要求：\w(字母，数字，下划线)，| 属性分隔符，空白字符如空格等，等号，小数点，百分号
 */
-const string ABE_ENC_SQL_REGEX = ".*abe_enc\\(\\s*['\"`](.+)['\"`]\\s*,\\s*['\"`](.+)['\"`]\\s*\\).*";
-const string ABE_ENC_REGEX = "abe_enc\\(\\s*['\"`](.+)['\"`]\\s*,\\s*['\"`](.+)['\"`]\\s*\\)";
-const string ABE_DEC_SQL_REGEX = ".*abe_dec\\(\\s*[`]*(\\w+)[`]*\\s*\\).*";
-const string ABE_DEC_REGEX = "abe_dec\\(\\s*[`]*(\\w+)[`]*\\s*\\)";
+const string ABE_ANY_R = ".*?";
+const string ABE_COMMA_R = "\\s*,\\s*";
+const string ABE_SUFIX_R = "\\s*\\)";
+
+const string ABE_ENC_PREFIX_R = "abe_enc\\(\\s*";
+const string ABE_ENC_DATA_R = "['\"`]((?:\\\\\"|\\\\\\(|\\\\\\)|[^\"\\(\\)])+)['\"`]"; // 真实正则：((?:\\"|\\\(|\\\)|[^\"\(\)])+)
+const string ABE_ENC_POLICY_R = "['\"`]((?:\\\\\"|\\\\\\(|\\\\\\)|[^\"\\(\\)])+)['\"`]";
+const string ABE_ENC_SQL_REGEX =  ABE_ANY_R + ABE_ENC_PREFIX_R + ABE_ENC_DATA_R
+                                     + ABE_COMMA_R + ABE_ENC_POLICY_R + ABE_SUFIX_R + ABE_ANY_R;
+const string ABE_ENC_REGEX = ABE_ENC_PREFIX_R + ABE_ENC_DATA_R
+                                    + ABE_COMMA_R + ABE_ENC_POLICY_R + ABE_SUFIX_R;
+
+const string ABE_DEC_PREFIX_R = "abe_dec\\(\\s*";
+const string ABE_DEC_FIELD_R = "[`]*(\\w+)[`]*";
+const string ABE_DEC_SQL_REGEX = ABE_ANY_R + ABE_DEC_PREFIX_R + ABE_DEC_FIELD_R + ABE_SUFIX_R + ABE_ANY_R;
+const string ABE_DEC_REGEX = ABE_DEC_PREFIX_R + ABE_DEC_FIELD_R + ABE_SUFIX_R;
+// const string ABE_ENC_SQL_REGEX = ".*abe_enc\\(\\s*['\"`](.+)['\"`]\\s*,\\s*['\"`](.+)['\"`]\\s*\\).*";
+// const string ABE_ENC_REGEX = "abe_enc\\(\\s*['\"`](.+)['\"`]\\s*,\\s*['\"`](.+)['\"`]\\s*\\)";
+// const string ABE_DEC_SQL_REGEX = ".*abe_dec\\(\\s*[`]*(\\w+)[`]*\\s*\\).*";
+// const string ABE_DEC_REGEX = "abe_dec\\(\\s*[`]*(\\w+)[`]*\\s*\\)";
 
 
 bool rewrite_plan::parse_and_rewrite(string &real_sql){
@@ -31,47 +47,52 @@ bool rewrite_plan::parse_and_rewrite(string &real_sql){
         is_select = false;
         std::cout << "insert statement" << std::endl;
         std::regex pattern = std::regex(ABE_ENC_SQL_REGEX);
+        std::regex pattern_enc = std::regex(ABE_ENC_REGEX);
+        string new_sql = raw_sql;
         std::smatch result;
-        bool isMatch = std::regex_match(sql, result, pattern);
-        if (isMatch) {
+        while (std::regex_match(new_sql, result, pattern, std::regex_constants::format_first_only)){
             is_enc = true;//需要加密
             //abe_enc只有两个参数，data和policy
-            enc_plan.data = result[1];
-            enc_plan.policy = result[2];
+            struct enc_field temp;
+            temp.data = result[1];
+            temp.policy = result[2];
             // std::cout << enc_plan.data << std::endl;
             // std::cout << enc_plan.policy << std::endl;
 
             string cipher;
-            crypto->encrypt(enc_plan.data, enc_plan.policy, cipher);
+            crypto->encrypt(temp.data, temp.policy, cipher);
             
-            enc_plan.enc_data = "'";
-            enc_plan.enc_data = enc_plan.enc_data + cipher;
-            enc_plan.enc_data = enc_plan.enc_data + "'";
+            temp.enc_data = "'";
+            temp.enc_data = temp.enc_data + cipher;
+            temp.enc_data = temp.enc_data + "'";
             
-            std::regex pattern_enc = std::regex(ABE_ENC_REGEX);
-            real_sql = std::regex_replace(sql, pattern_enc, enc_plan.enc_data);
-	        std::cout << "after replace: " << real_sql << std::endl;
+            new_sql = std::regex_replace(new_sql, pattern_enc, temp.enc_data, std::regex_constants::format_first_only);
+            enc_plan.push_back(temp);
+            std::cout << "new_sql: " << new_sql << std::endl;
         }
+
+        real_sql = new_sql;
+        std::cout << "after replace: " << real_sql << std::endl;
         return true;
         
     }else if (firstWord == "select"){
         is_select = true;
         std::cout << "select statement" << std::endl;
         std::regex pattern = std::regex(ABE_DEC_SQL_REGEX);
-        std::smatch result;
-        bool isMatch = std::regex_match(sql, result, pattern);
-        if (!isMatch){  //正常语句，无需重写
-            real_sql = sql;
-            is_dec = true;
-            return true;
-        }
-        
-        is_dec = true;//需要解密
-
-        //abe_dec只有一个参数，field_name
-        dec_plan.field_name = result[1];
         std::regex pattern_dec = std::regex(ABE_DEC_REGEX);
-        real_sql = std::regex_replace(sql, pattern_dec, dec_plan.field_name);
+        std::smatch result;
+        string new_sql = raw_sql;
+        while (std::regex_match(new_sql, result, pattern, std::regex_constants::format_first_only)){
+            is_dec = true;//需要解密
+
+            //abe_dec只有一个参数，field_name
+            struct dec_field temp;
+            temp.field_name = result[1];
+            new_sql = std::regex_replace(new_sql, pattern_dec, temp.field_name, std::regex_constants::format_first_only);
+            dec_plan.push_back(temp);
+            std::cout << "new_sql: " << new_sql << std::endl;
+        }
+        real_sql = new_sql;
         std::cout << "after replace: " << real_sql << std::endl;
         return true;
 

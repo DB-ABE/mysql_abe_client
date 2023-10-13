@@ -50,7 +50,9 @@ public:
     //需要解密的列名
     std::vector<string> field_name_list() const {
         std::vector<string> list;
-        list.push_back(dec_plan.field_name);       //当前只有一个dec_plan，后续可考虑支持多个
+        for(auto item : dec_plan){
+            list.push_back(item.field_name);
+        }
         return list;
     }
 
@@ -63,12 +65,12 @@ private:
 
     string raw_sql; //用户输入sql
 
-    struct enc_field enc_plan;  //一个改写点    当前只考虑一个改写点，即只有一个abe_enc()
+    std::vector<struct enc_field> enc_plan;  //改写点列表
 
     string real_sql;
 
     //解密需要：
-    struct dec_field dec_plan;
+    std::vector<struct dec_field> dec_plan;
 
     
 

@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
                     if(my_rewrite_plan.need_dec() && std::find(field_name_list.begin(), field_name_list.end(), 
                         res.field_name(j))  != field_name_list.end()){
                         //在要解密的列表中，需解密输出
-                        //注意mysql++的row[j]并非是std::string，而是其自己实现的String类，需做一定的转换
+                        //mysql++的row[j]并非是std::string，而是其自己实现的String类，需做一定的转换
                         string ct(row[j].c_str());  
                         string pt;
                         my_rewrite_plan.crypto->decrypt(ct,pt);
