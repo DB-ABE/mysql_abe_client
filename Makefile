@@ -1,4 +1,4 @@
-export CXXFLAGS := -std=c++11 -lstdc++ -Wall -Werror -I/usr/include/mysql -I/usr/local/include/mysql++ -DSSL_LIB_INIT  -I/usr/local/include
+export CXXFLAGS := -std=c++11 -lstdc++ -g -Wall -Werror -I/usr/include/mysql -I/usr/local/include/mysql++ -DSSL_LIB_INIT  -I/usr/local/include
 export LDFLAGS := -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu
 export LDLIBS := -lmysqlpp -lmysqlclient -lcrypto -lrelic -lrelic_ec -lopenabe
 EXECUTABLE := main test

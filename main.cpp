@@ -47,11 +47,10 @@ int main(int argc, char *argv[])
     struct parameters params;
     read_config_file(params);
     read_opt(params, argc, argv);
-
     
     abe_crypto my_abe("user1");//暂时使用user1，之后需要通过select current_user()获取
     if(!my_abe.init(params.abe_pp_path, params.abe_key_path)){
-        return 1;
+        return 0;
     }
 
     std::string input;
@@ -59,11 +58,11 @@ int main(int argc, char *argv[])
     if (!conn.connect(params.database.c_str(), params.host.c_str(), params.username.c_str(),
          params.password.c_str(), params.port)){
         std::cerr << "DB connection failed: " << conn.error() << std::endl;
-        return 1;
+        return 0;   
     }
     while (true) {
         std::cout << "abe_client> ";
-        if (!std::getline(std::cin, input) || input == "exit") {
+        if (!std::getline(std::cin, input) || input == "exit" || input == "q") {
             // 用户输入ctrl+d (EOF)或exit，退出客户端
             std::cout << "\nBye!" << std::endl;
             break;
@@ -78,7 +77,6 @@ int main(int argc, char *argv[])
         //2. 执行sql语句得到结果
         //todo: a-解密，b-获取abe密钥后解密保存在指定目录中
        
-        std::cout << "处理命令: " << real_sql << std::endl;
         mysqlpp::Query query = conn.query(real_sql.c_str());
         if (mysqlpp::StoreQueryResult res = query.store()) {
             int field_num = res.num_fields();
