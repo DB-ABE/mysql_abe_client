@@ -45,11 +45,11 @@ bool read_config_file(struct parameters &params){
 
 /*以下参数必须提供*/
 //cacert
-    std::string cacert_path = read_config(config,"cacert_path");
-    if(cacert_path == ""){
+    std::string ca_cert_path = read_config(config,"ca_cert_path");
+    if(ca_cert_path == ""){
         ERR_LOG_RET("read_config failed");
     }else{
-        params.cacert_path = base_dir + cacert_path;
+        params.ca_cert_path = base_dir + ca_cert_path;
     }
 //cert
     std::string cert_path = read_config(config,"cert_path");
@@ -57,6 +57,20 @@ bool read_config_file(struct parameters &params){
         ERR_LOG_RET("read_config failed");
     }else{
         params.cert_path = base_dir + cert_path;
+    }
+//dbcert
+    std::string db_cert_path = read_config(config,"db_cert_path");
+    if(db_cert_path == ""){
+        ERR_LOG_RET("read_config failed");
+    }else{
+        params.db_cert_path = base_dir + db_cert_path;
+    }
+//kmscert
+    std::string kms_cert_path = read_config(config,"kms_cert_path");
+    if(kms_cert_path == ""){
+        ERR_LOG_RET("read_config failed");
+    }else{
+        params.kms_cert_path = base_dir + kms_cert_path;
     }
 //rsa_sk
     std::string rsa_sk_path = read_config(config,"rsa_sk_path");

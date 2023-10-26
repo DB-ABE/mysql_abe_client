@@ -15,9 +15,11 @@ struct parameters{
 
     string base_dir;    //基目录，完整路径为：基目录+配置文件中的目录
 
-    string cacert_path; //CA证书路径
+    string ca_cert_path; //CA证书路径
     string cert_path;   //自身的证书路径
-    string rsa_sk_path; //rsa私钥路径
+    string rsa_sk_path; //rsa私钥路径,用于解密
+    string db_cert_path;  //db证书，用于验签
+    string kms_cert_path;   //kms证书，用于验签
 
     string abe_key_path;    //abe密钥路径
     string abe_pp_path;     //abe公共参数路径，也可称mpk

@@ -71,7 +71,7 @@ bool rewrite_plan::select_handler(string &real_sql, const string &raw_sql){
     return true;
 }
 
-bool rewrite_plan::parse_and_rewrite(string &real_sql){
+bool rewrite_plan::parse_and_rewrite(){
     
     std::string sql = raw_sql;
     //只有show/select命令需要打印查询结果，其他的不需要
@@ -92,9 +92,13 @@ bool rewrite_plan::parse_and_rewrite(string &real_sql){
             std::cout << "after replace: " << real_sql << std::endl;
             break;
         }
+        case COM_GET_ABE_KEY:{
+            real_sql = "select owner,encrypted_key,sig_db,sig_db_type,sig_kms,sig_kms_type from mysql.abe_user_key";
+            real_sql += " where owner = '" + crypto->user.user_id + "';";
+            break;
+        }
         case COM_SHOW:
         case COM_SELECT_CURRENT_USER:
-        case COM_GET_ABE_KEY:
         case COM_OTHER:{
             real_sql = sql;
             break;

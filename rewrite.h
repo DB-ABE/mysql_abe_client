@@ -14,14 +14,15 @@ using std::string;
 
 enum CommandType{
     BEGIN,
+    COM_SELECT_CURRENT_USER,
+    COM_GET_ABE_KEY,
     COM_SELECT,
     COM_INSERT,
     COM_SHOW,
-    COM_SELECT_CURRENT_USER,
-    COM_GET_ABE_KEY,
+    END,
+
     COM_OTHER,
-    WRONG_SQL,
-    END
+    WRONG_SQL
 };
 
 
@@ -55,7 +56,7 @@ public:
         const string COM_INSERT_SQL_REGEX = "\\s*insert.*";
         const string COM_SHOW_SQL_REGEX = "\\s*show.*";
         const string COM_SELECT_CURRENT_USER_SQL_REGEX = "\\s*select\\s+current_user().*";
-        const string GET_ABE_KEY_REGEX = "\\s*select\\s+abe_key();\\s*";
+        const string GET_ABE_KEY_REGEX = "\\s*show\\s+current_abe_key;\\s*";
 
         ABE_ENC_PATTERN = std::regex(ABE_ENC_REGEX, std::regex::icase);
         ABE_ENC_SQL_PATTERN = std::regex(ABE_ENC_SQL_REGEX, std::regex::icase);
@@ -91,9 +92,9 @@ public:
     * input: 用户输入的原始sql语句
     * real_sql: 重写完成后真正要执行的sql语句
     */
-    rewrite_plan(string input) :is_enc(false), is_dec(false), raw_sql(input) {}
+    rewrite_plan(string input) : raw_sql(input), is_enc(false), is_dec(false) {}
 
-    bool parse_and_rewrite(string &output);
+    bool parse_and_rewrite();
 
     bool need_print() const{   return (com_type == COM_SELECT || com_type == COM_SHOW);}
     bool need_enc() const {    return is_enc;   }
@@ -114,13 +115,18 @@ public:
     */
     CommandType com_type;
 
+    //只考虑owner,encrypted_key,sig_db,sig_db_type,sig_kms,sig_kms_type
+    static constexpr int TABLE_ABE_UER_KEY_FIELD_NUM = 6;
+    enum abe_user_key_field {F_OWNER_NUM = 0,F_KEY_NUM = 1,F_SIG_DB_NUM = 2, F_SIG_DB_TYPE_NUM = 3,
+                            F_SIG_KMS_NUM = 4, F_SIG_KMS_TYPE_NUM = 5};
+    string raw_sql; //用户输入sql
+    string real_sql;
+
 private:
     bool is_enc;    //true:加密时，一般为插入 
     bool is_dec;    //true,解密一般为查询
 
-    string raw_sql; //用户输入sql
     std::vector<struct enc_field> enc_plan;  //改写点列表
-    string real_sql;
 
     //解密需要：
     std::vector<struct dec_field> dec_plan;

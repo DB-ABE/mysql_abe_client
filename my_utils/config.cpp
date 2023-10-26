@@ -39,6 +39,16 @@ std::string trim(std::string text)
 	}
 	return text;
 }
+
+bool check(const std::string str){
+	std::string s = str;
+	trim(s);
+	if(s.empty()){
+		return false;
+	}
+	return true;
+}
+
 //用于支持将多行的配置文件分割开来
 void Stringsplit(std::string str, const char split, std::vector<std::string>& strList)
 {
@@ -85,6 +95,7 @@ std::map<std::string, std::string> get_configs(std::string fname) {
 	std::map<std::string, std::string> maps;
 	for (size_t i = 0;i < strList.size();i++) {
 		std::vector<std::string> tmp1,tmp2;
+		if(!check(strList[i])) continue;
 		Stringsplit2(strList[i], '#', tmp1);//用于清除注释  注释存储在trim(tmp1[1])中
 		Stringsplit2(tmp1[0], '=', tmp2);//把字符串分为两节
 		maps.insert({ trim(tmp2[0]),trim(tmp2[1]) });//去除字符串多余的空格（包含 \n\r\t）
@@ -92,7 +103,7 @@ std::map<std::string, std::string> get_configs(std::string fname) {
  
 	//添加默认配置
 	//如果配置文件中的key都是正常设置了的，那么下面的insert代码都不会生效
-    maps.insert({ "cacert_path", "certs/cacert" });
+    maps.insert({ "ca_cert_path", "certs/cacert" });
     maps.insert({ "cert_path", "certs/cert" });
 	maps.insert({ "rsa_sk_path", "certs/rsa_sk" });
 	maps.insert({ "abe_key_path","certs/abe_key" });
