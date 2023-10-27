@@ -74,7 +74,11 @@ bool save_abe_key(const rewrite_plan &my_rewrite_plan, const mysqlpp::StoreQuery
                  const string &key_path){
     int field_num = res.num_fields();
     int row_num = res.num_rows();
-    if(row_num != 1 || field_num != my_rewrite_plan.TABLE_ABE_UER_KEY_FIELD_NUM){
+    if(row_num != 1){
+        std::cout << "It seems that you don't have the abe key, please contact the admininistrator" << std::endl;
+    }
+    if(field_num != my_rewrite_plan.TABLE_ABE_UER_KEY_FIELD_NUM){
+        std::cout << "system table 'abe_user_key' error" << std::endl;
         return false;
     }
 
@@ -85,15 +89,17 @@ bool save_abe_key(const rewrite_plan &my_rewrite_plan, const mysqlpp::StoreQuery
                             << row[my_rewrite_plan.F_OWNER_NUM] << std::endl;
     std::cout << res.field_name(my_rewrite_plan.F_KEY_NUM) << ":\t" 
                             << row[my_rewrite_plan.F_KEY_NUM] << std::endl;
+    std::cout << std::endl;
 
-    string key_str(row[my_rewrite_plan.F_KEY_NUM]);
-    string sig_db(row[my_rewrite_plan.F_SIG_DB_NUM]);
-    string sig_db_type(row[my_rewrite_plan.F_SIG_DB_TYPE_NUM]);
-    string sig_kms(row[my_rewrite_plan.F_SIG_KMS_NUM]);
-    string sig_kms_type(row[my_rewrite_plan.F_SIG_KMS_TYPE_NUM]);
+    string key_str(row[my_rewrite_plan.F_KEY_NUM].c_str());
+    string sig_db(row[my_rewrite_plan.F_SIG_DB_NUM].c_str());
+    string sig_db_type(row[my_rewrite_plan.F_SIG_DB_TYPE_NUM].c_str());
+    string sig_kms(row[my_rewrite_plan.F_SIG_KMS_NUM].c_str());
+    string sig_kms_type(row[my_rewrite_plan.F_SIG_KMS_TYPE_NUM].c_str());
 
-
-    if(!(my_rewrite_plan.crypto->verify_db_sig(key_str,sig_db) 
+    string namehost = my_rewrite_plan.crypto->user.user_id;
+    string attrlist = my_rewrite_plan.crypto->user.user_attr;
+    if(!(my_rewrite_plan.crypto->verify_db_sig(namehost + attrlist,sig_db) 
         && my_rewrite_plan.crypto->verify_kms_sig(key_str,sig_kms))){
             return false;
     }
@@ -151,8 +157,23 @@ std::string get_current_user(mysqlpp::Connection conn){
         mysqlpp::StoreQueryResult::const_iterator it = res.begin(); //只有一行结果
         mysqlpp::Row row = *it;
         std::string namehost(row[0]);
-        std::cout << "Welcome! " << namehost << std::endl;
         return namehost;
+    }
+    return "";
+}
+
+std::string get_current_user_abe_attribute(mysqlpp::Connection conn, string namehost){
+    string sql = "select att from mysql.abe_attribute_manager where user = '" + namehost + "';";
+    mysqlpp::Query query = conn.query(sql);
+    if (mysqlpp::StoreQueryResult res = query.store()) {
+        
+        int field_num = res.num_fields();
+        int row_num = res.num_rows();
+        if(row_num != 1 || field_num != 1)  return "";
+        mysqlpp::StoreQueryResult::const_iterator it = res.begin(); //只有一行结果
+        mysqlpp::Row row = *it;
+        std::string att(row[0]);
+        return att;
     }
     return "";
 }
@@ -167,7 +188,9 @@ int main(int argc, char *argv[])
     read_opt(params, argc, argv);
     
     abe_crypto my_abe("testabe@%");//暂时使用user1，之后需要通过select current_user()获取
-    if(!my_abe.init(params.abe_pp_path, params.abe_key_path, params.kms_cert_path, params.db_cert_path)){
+    if(!my_abe.init(params.abe_pp_path, params.abe_key_path, 
+                    params.kms_cert_path, params.db_cert_path,
+                    params.rsa_sk_path)){
         return 0;
     }
 
@@ -178,7 +201,19 @@ int main(int argc, char *argv[])
     }
 
     std::string namehost = get_current_user(conn);
-    my_abe.set_name(namehost);
+    std::string attrlist;
+    if(namehost == ""){
+        std::cout << "can't get your username and host!" << std::endl;
+    }else{
+        my_abe.set_name(namehost);
+        attrlist = get_current_user_abe_attribute(conn, namehost);
+        if(attrlist == ""){
+            std::cout << "can't get your attrlist, please contact adminastrator." << std::endl;
+        }else{
+            my_abe.set_att(attrlist);
+        }
+    }
+    
 
     while (true) {
         std::cout << "abe_client> ";

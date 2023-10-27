@@ -5,7 +5,7 @@ cert_path=certs/testabe@%cert.pem
 kms_cert_path=certs/kmscert.pem
 db_cert_path=certs/dbcert.pem
 
-rsa_sk_path=certs/testabe@%.pem
+rsa_sk_path=prikey/testabe@%.pem
 
 abe_key_path=abe/abe_key
 abe_pp_path=abe/abe_pp
