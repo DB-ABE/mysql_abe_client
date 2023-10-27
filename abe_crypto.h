@@ -14,6 +14,9 @@ using namespace oabe;
 using namespace oabe::crypto;
 using std::string;
 
+#define ABE_ERROR(msg) std::cerr << "error: " << (msg) << std::endl;
+#define ABE_ERROR2(msg,comment) std::cerr << (msg) << (comment) << std::endl;
+#define ABE_LOG(msg) std::cout << (msg) << std::endl;
 
 #define RSA_Encrypt_length 245
 #define RSA_Decrypt_length 256
@@ -56,8 +59,6 @@ private:
     RSA *sk = NULL;
     bool verify_sig(RSA *pk, unsigned char * msg, size_t msg_length, unsigned char * sig, size_t sig_length);
     bool rsa_decrypt(const string ct, string &pt);
-
-    int rsa_decrypt(unsigned char * pt, unsigned char * ct, size_t ct_length);
     RSA * import_pk(const string cert_path, string &err_msg);
 };
 #endif

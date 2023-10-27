@@ -10,7 +10,6 @@
 #include "abe_crypto.h"
 #include "my_utils/base64.h"
 
-#define ABE_ERROR(msg) std::cout << "abe_crypto error: " << (msg) << std::endl;
 
 bool abe_crypto::encrypt(string pt, string policy, string &ct){
   
@@ -43,7 +42,7 @@ bool abe_crypto::decrypt(string ct, string &pt){
 
 bool abe_crypto::check_abe_key(){
     if(user.user_key == ""){
-        std::cout << "there is no abe_key, please run:\n\tshow current_abe_key;\nto get from database" << std::endl;
+        ABE_ERROR("there is no abe_key, please run:\n\tshow current_abe_key;\nto get from database");
         return false;
     }
     return true;
@@ -68,7 +67,7 @@ bool abe_crypto::import_mpk(string mpk_path){
     //读入mpk
     std::ifstream ifs_mpk(mpk_path, std::ios::in);
     if(!ifs_mpk){
-        std::cerr << "error opening security pameter (mpk) file.\nmpk_path=" << mpk_path <<std::endl;
+        ABE_ERROR2("error opening security pameter (mpk) file.\nmpk_path=", mpk_path);
         return false;
     }
     ifs_mpk>>mpk;
@@ -80,7 +79,7 @@ bool abe_crypto::import_user_key(string key_path){
     //读入abe_user_key
     std::ifstream ifs_key(key_path, std::ios::in);
     if(!ifs_key){
-        std::cout << "there is no abe_key, please run:\n\tshow current_abe_key;\nto get from database" << std::endl;
+        ABE_ERROR("there is no abe_key, please run:\n\tshow current_abe_key;\nto get from database");
         return false;
     }
     ifs_key>>user.user_key;
@@ -100,13 +99,13 @@ bool abe_crypto::save_user_key(string key_path, string key_str_b64){
     string ct(key_str,key_str_length);
     if(!rsa_decrypt(ct, pt)){
         free(key_str);
-        std::cerr << "failed to decrypt abe user key" << std::endl;
+        ABE_ERROR("failed to decrypt abe user key");
         return false;
     }
     //写入abe_user_key
     std::ofstream ofs_key(key_path, std::ios::out);
     if(!ofs_key){
-        std::cerr<<"error opening user key-file.\nkey_path=" << key_path <<std::endl;
+        ABE_ERROR2("error opening user key-file.\nkey_path=" , key_path);
         return false;
     }
     ofs_key << pt;
@@ -211,10 +210,10 @@ bool abe_crypto::verify_sig(RSA *pk, unsigned char * msg, size_t msg_length, uns
     // 对签名进行认证
     int ret = RSA_verify(NID_sha512, digest, SHA512_DIGEST_LENGTH, sig, sig_length, pk);
     if (ret != 1){
-        std::cout << "verify error\n";
+        ABE_ERROR("verify error");
         unsigned long ulErr = ERR_get_error();
         char szErrMsg[1024] = {0};
-        std::cout << "error number:" << ulErr << std::endl;
+        ABE_ERROR2("error number:" , ulErr);
         ERR_error_string(ulErr, szErrMsg); // 格式：error:errId:库:函数:原因
         std::cout << szErrMsg << std::endl;
         return false;
@@ -231,10 +230,10 @@ bool abe_crypto::verify_db_sig(const string msg, const string sig_b64){
 
     if(!verify_sig(db_pk, (unsigned char *)msg.c_str(), msg.length(), sig, sig_length)){
         free(sig);
-        std::cout << "db_sig: verify failed" << std::endl;
+        ABE_ERROR("db_sig: verify failed");
         return false;
     }
-    std::cout << "db_sig: verify success" << std::endl;
+    ABE_LOG("db_sig: verify success");
     return true;
 }
 
@@ -250,11 +249,11 @@ bool abe_crypto::verify_kms_sig(const string msg_b64, const string sig_b64){
     size_t sig_length = base64_utils::b64_decode(sig_b64.c_str(), sig_b64_length, (char*)sig);
 
     if(!verify_sig(kms_pk, msg, msg_length, sig, sig_length)){
-        std::cout << "kms_sig: verify failed" << std::endl;
+        ABE_ERROR("kms_sig: verify failed");
         return false;
     }
     
-    std::cout << "kms_sig: verify success" << std::endl;
+    ABE_LOG("kms_sig: verify success");
     return true;
 }
 

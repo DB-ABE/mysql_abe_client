@@ -41,7 +41,7 @@ void handle_signal(int signal) {
 bool mysql_connect(mysqlpp::Connection &conn, const struct parameters &params){
     if (!conn.connect(params.database.c_str(), params.host.c_str(), params.username.c_str(),
          params.password.c_str(), params.port)){
-        std::cerr << "DB connection failed: " << conn.error() << std::endl;
+        ABE_ERROR2("DB connection failed: " , conn.error());
         return false;
     }
     return true;
@@ -75,10 +75,10 @@ bool save_abe_key(const rewrite_plan &my_rewrite_plan, const mysqlpp::StoreQuery
     int field_num = res.num_fields();
     int row_num = res.num_rows();
     if(row_num != 1){
-        std::cout << "It seems that you don't have the abe key, please contact the admininistrator" << std::endl;
+        ABE_LOG("It seems that you don't have the abe key, please contact the admininistrator");
     }
     if(field_num != my_rewrite_plan.TABLE_ABE_UER_KEY_FIELD_NUM){
-        std::cout << "system table 'abe_user_key' error" << std::endl;
+        ABE_ERROR("system table 'abe_user_key' error");
         return false;
     }
 
@@ -106,7 +106,7 @@ bool save_abe_key(const rewrite_plan &my_rewrite_plan, const mysqlpp::StoreQuery
     if(!my_rewrite_plan.crypto->save_user_key(key_path, key_str)){
         return false;
     }
-    std::cout << "current abe user key saved successfully!" << std::endl;
+    ABE_LOG("current abe user key saved successfully!");
     return true;
 }
 
@@ -191,6 +191,7 @@ int main(int argc, char *argv[])
     if(!my_abe.init(params.abe_pp_path, params.abe_key_path, 
                     params.kms_cert_path, params.db_cert_path,
                     params.rsa_sk_path)){
+        ABE_ERROR("failed to init abe system");
         return 0;
     }
 
@@ -203,12 +204,12 @@ int main(int argc, char *argv[])
     std::string namehost = get_current_user(conn);
     std::string attrlist;
     if(namehost == ""){
-        std::cout << "can't get your username and host!" << std::endl;
+        ABE_ERROR("can't get your username and host!");
     }else{
         my_abe.set_name(namehost);
         attrlist = get_current_user_abe_attribute(conn, namehost);
         if(attrlist == ""){
-            std::cout << "can't get your attrlist, please contact adminastrator." << std::endl;
+            ABE_ERROR("can't get your attrlist, please contact adminastrator.");
         }else{
             my_abe.set_att(attrlist);
         }
