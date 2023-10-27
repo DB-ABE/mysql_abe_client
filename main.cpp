@@ -22,9 +22,9 @@ using namespace oabe;
 using namespace oabe::crypto;
 
 
-#include "rewrite.h"
-#include "abe_crypto.h"
-#include "parameters.h"
+#include "src/rewrite.h"
+#include "src/abe_crypto.h"
+#include "src/parameters.h"
 
 using std::string;
 

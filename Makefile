@@ -1,26 +1,29 @@
-export CXXFLAGS := -std=c++11 -lstdc++ -g -Wall -Werror -I/usr/include/mysql -I/usr/local/include/mysql++ -DSSL_LIB_INIT  -I/usr/local/include
+CC := g++
+export CXXFLAGS := -std=c++11 -lstdc++ -g -Wall -Werror -DSSL_LIB_INIT
+export INCLUDE := -I/usr/include/mysql -I/usr/local/include/mysql++  -I/usr/local/include
 export LDFLAGS := -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu
 export LDLIBS := -lmysqlpp -lmysqlclient -lcrypto -lrelic -lrelic_ec -lopenabe
-EXECUTABLE := main test
-OBJECTS := rewrite.o abe_crypto.o parameters.o
-UTIL_OBJECTS := config.o base64.o
-# .PHONY: my_utils_tag
-all:  $(EXECUTABLE)
 
-# my_utils_tag:
-# 	$(MAKE) -C my_utils
-parameters.o: my_utils/config.o my_utils/base64.o
-	g++ -std=c++11 -lstdc++ -g -Wall -Werror parameters.cpp -c -o $@
-my_utils/config.o:
-	g++ -std=c++11 -lstdc++ -g -Wall -Werror my_utils/config.cpp -c -o my_utils/config.o
-my_utils/base64.o:
-	g++ -std=c++11 -lstdc++ -g -Wall -Werror my_utils/base64.cpp -c -o my_utils/base64.o
+MAIN_SRC := main.cpp
+MAIN_OBJ := $(MAIN_SRC:%.cpp=%.o)
+MAIN_EXE := abe_client
+
+UTILS_SRCS := $(shell find src/my_utils/* -type f | grep "\.cpp")
+UTILS_OBJS := $(patsubst %.cpp, %.o, $(filter %.cpp, $(UTILS_SRCS)))
+SRCS := $(shell find src -maxdepth 1 -type f| grep "\.cpp")
+OBJS := $(patsubst %.cpp, %.o, $(filter %.cpp, $(SRCS)))
 
 
+# .PHONY: 
+all:  $(MAIN_EXE)
 
-# all:
-# 	g++ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -o hello hello.cpp
-$(EXECUTABLE): my_utils/config.o my_utils/base64.o  $(OBJECTS) 
+$(MAIN_EXE): $(UTILS_OBJS) $(OBJS) $(MAIN_OBJ)
+	$(CC) -o $@ $^ $(CXXFLAGS) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
+
+%.o: %.cpp
+	$(CC) -c -o $@ $< $(CXXFLAGS) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
+
+
 clean: 
-	rm -f $(EXECUTABLE) *.o my_utils/*.o
-# $(MAKE) -C my_utils clean
+	rm -f $(MAIN_EXE) $(UTILS_OBJS) $(OBJS) $(MAIN_OBJ)
+
