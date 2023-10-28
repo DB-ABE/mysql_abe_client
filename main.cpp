@@ -104,9 +104,10 @@ bool save_abe_key(const rewrite_plan &my_rewrite_plan, const mysqlpp::StoreQuery
             return false;
     }
     if(!my_rewrite_plan.crypto->save_user_key(key_path, key_str)){
+        ABE_LOG("abe key unchanged");
         return false;
     }
-    ABE_LOG("current abe user key saved successfully!");
+    ABE_LOG("current abe key update successfully!");
     return true;
 }
 
@@ -162,9 +163,8 @@ std::string get_current_user(mysqlpp::Connection conn){
     return "";
 }
 
-std::string get_current_user_abe_attribute(mysqlpp::Connection conn, string namehost){
-    string sql = "select att from mysql.abe_attribute_manager where user = '" + namehost + "';";
-    mysqlpp::Query query = conn.query(sql);
+std::string get_current_user_abe_attribute(mysqlpp::Connection conn){
+    mysqlpp::Query query = conn.query("select current_abe_attribute();");
     if (mysqlpp::StoreQueryResult res = query.store()) {
         
         int field_num = res.num_fields();
@@ -207,12 +207,14 @@ int main(int argc, char *argv[])
         ABE_ERROR("can't get your username and host!");
     }else{
         my_abe.set_name(namehost);
-        attrlist = get_current_user_abe_attribute(conn, namehost);
-        if(attrlist == ""){
-            ABE_ERROR("can't get your attrlist, please contact adminastrator.");
-        }else{
-            my_abe.set_att(attrlist);
-        }
+        std::cout << "Welcome! " << namehost << std::endl;
+        
+    }
+    attrlist = get_current_user_abe_attribute(conn);
+    if(attrlist == ""){
+        ABE_ERROR("can't get your attrlist, please contact adminastrator.");
+    }else{
+        my_abe.set_att(attrlist);
     }
     
 
@@ -222,7 +224,10 @@ int main(int argc, char *argv[])
             // 用户输入ctrl+d (EOF)或exit，退出客户端
             std::cout << "\nBye!" << std::endl;
             break;
+        }else if(input == ""){
+            continue;
         }
+        
 
         //1. 解析sql语句并根据需要重写
         rewrite_plan my_rewrite_plan(input);
