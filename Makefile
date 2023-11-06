@@ -1,4 +1,5 @@
 CC := g++
+#export CXXFLAGS := -std=c++11 -lstdc++ -g -Wall -Werror -DSSL_LIB_INIT -fsanitize=address
 export CXXFLAGS := -std=c++11 -lstdc++ -g -Wall -Werror -DSSL_LIB_INIT
 export INCLUDE := -I/usr/include/mysql -I/usr/local/include/mysql++  -I/usr/local/include
 export LDFLAGS := -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu

@@ -33,7 +33,9 @@ bool abe_crypto::decrypt(string ct, string &pt){
   OpenABECryptoContext cpabe("CP-ABE");
   cpabe.importPublicParams(mpk);
   cpabe.importUserKey(user.user_id.c_str(), user.user_key);
-  cpabe.decrypt(user.user_id.c_str(), ct, pt);
+  if(!cpabe.decrypt(user.user_id.c_str(), ct, pt)){
+    pt = "can't decrypt.";
+  }
 //   std::cout << "Recovered message: " << pt << std::endl;
   ShutdownOpenABE();
   
@@ -245,6 +247,7 @@ bool abe_crypto::verify_db_sig(const string msg, const string sig_b64){
         return false;
     }
     ABE_LOG("db_sig: verify success");
+    free(sig);
     return true;
 }
 
@@ -260,11 +263,15 @@ bool abe_crypto::verify_kms_sig(const string msg_b64, const string sig_b64){
     size_t sig_length = base64_utils::b64_decode(sig_b64.c_str(), sig_b64_length, (char*)sig);
 
     if(!verify_sig(kms_pk, msg, msg_length, sig, sig_length)){
+        free(msg);
+        free(sig);
         ABE_ERROR("kms_sig: verify failed");
         return false;
     }
     
     ABE_LOG("kms_sig: verify success");
+    free(msg);
+    free(sig);
     return true;
 }
 
