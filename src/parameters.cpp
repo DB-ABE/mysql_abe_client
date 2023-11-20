@@ -149,8 +149,13 @@ cxxopts::ParseResult parse_opt(int argc, char *argv[]){
         ("D,database", "the database you want to connect", cxxopts::value<string>()->default_value("mysql"))
         ("help", "print this usage info")
     ;
+    options.allow_unrecognised_options();
 
     auto result = options.parse(argc, argv);
+
+    for(auto it :result.unmatched()){
+        std::cerr << "unrecognised option: " << it << std::endl;
+    }
 
     if (result.count("help"))
     {
