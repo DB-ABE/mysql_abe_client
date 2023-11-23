@@ -26,6 +26,8 @@ struct parameters{
 
     string abe_kms_ip;      //密钥管理中心IP
     unsigned int abe_kms_port;  //密钥管理中心端口
+
+    string config_file_path;    //config文件路径，可由命令行参数指定
 };
 
 bool read_config_file(struct parameters &params);

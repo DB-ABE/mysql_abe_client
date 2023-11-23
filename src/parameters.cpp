@@ -7,7 +7,8 @@ using std::string;
 
 
 bool read_config_file(struct parameters &params){
-    std::map<std::string, std::string> config = get_configs(CONFIG_FILE);
+    string file_path = params.config_file_path;
+    std::map<std::string, std::string> config = get_configs(file_path);
 
     std::string base_dir = read_config(config,"base_dir");
     if(base_dir == ""){
@@ -131,8 +132,7 @@ bool read_opt(struct parameters &params, int argc, char *argv[]){
     params.port = port;
     params.database = database;
 
-
-    //todo:下一步处理默认参数和从config中读取的参数之间的关系
+    params.config_file_path = opts["config"].as<string>();
     return true;
 
 }
@@ -147,6 +147,7 @@ cxxopts::ParseResult parse_opt(int argc, char *argv[]){
         ("h,host", "the hostname of the database server", cxxopts::value<string>()->default_value("127.0.0.1"))
         ("P,port", "the port of the database server", cxxopts::value<unsigned int>()->default_value("3306"))
         ("D,database", "the database you want to connect", cxxopts::value<string>()->default_value("mysql"))
+        ("config", "the config file path", cxxopts::value<string>()->default_value("./config.txt"))
         ("help", "print this usage info")
     ;
     options.allow_unrecognised_options();

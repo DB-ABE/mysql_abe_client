@@ -100,9 +100,8 @@ public:
     bool need_enc() const {    return is_enc;   }
     bool need_dec() const {    return is_dec;   }
 
-    bool set_crypto(struct abe_crypto &c){
+    void set_crypto(struct abe_crypto &c){
         crypto = &c;
-        return true;
     }
 
     //需要解密的列名

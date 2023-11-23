@@ -10,6 +10,7 @@
 #include "openssl/crypto.h"
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 using std::string;
 
@@ -34,9 +35,12 @@ protected:
 	string abe_key_path = base_dir + "abe/abe_key";
 	string abe_pp_path = base_dir + "abe/abe_pp";
 
-	//签名验证用：
+	//用于测试签名验证：
 	string db_sk_path = base_dir + "prikey/db.pem";
 	string kms_sk_path = base_dir + "prikey/kms.pem";
+	//用于测试解密
+	string rsa_cert_path = base_dir + "certs/testabe@%cert.pem";
+	string test_abe_key_path = base_dir + "abe/test_abe_key";
 };
 
 TEST_F(cryptoTest, cryptoInitSuccess1){
@@ -124,9 +128,7 @@ TEST_F(cryptoTest, cryptoImportUserKey){
     EXPECT_EQ(false, res);
 }
 
-TEST_F(cryptoTest, cryptoImportSaveKey){//todo
-	
-}
+/*save key的测试放在了最后*/
 
 TEST_F(cryptoTest, cryptoCheckAbeKey){
 	abe_crypto crypto("testabe@%");
@@ -305,4 +307,119 @@ TEST_F(cryptoTest, cryptoVerifyKmsSig){
 	}
 	
 	free(msg_b64);
+}
+
+// RSA加密，用于测试密钥保存功能
+std::string my_RSA_Encrypt(const std::string strPemFileName, const std::string strData)
+{
+    // 打开rsa密钥文件
+    FILE *hPubKeyFile = fopen(strPemFileName.c_str(), "rb");
+    if (hPubKeyFile == NULL)
+    {
+        return "";
+    }
+
+    std::string strRet; // 存储加密结果
+    // 从证书读取rsa密钥
+    X509 *cert = PEM_read_X509(hPubKeyFile, nullptr, nullptr, nullptr);
+    EVP_PKEY *evp_key = X509_get_pubkey(cert);
+    RSA *pRSAPublicKey = EVP_PKEY_get1_RSA(evp_key);
+    
+    // 获取rsa长度
+    int nLen = RSA_size(pRSAPublicKey);
+    // 创建pencode临时存储加密密文
+    char *pEncode = new char[nLen + 1];
+
+    // 加密开始，分组进行加密
+    if (strData.length() < RSA_Encrypt_length + 1)
+    { // 如果长度小于一个分组
+        int ret = RSA_public_encrypt(strData.length(), (const unsigned char *)strData.c_str(),
+                                     (unsigned char *)pEncode, pRSAPublicKey, RSA_PKCS1_PADDING);
+        if (ret >= 0)
+        {
+            strRet = std::string(pEncode, ret);
+        }
+        else
+        {
+            strRet = "";
+        }
+    }
+    else
+    { // 如果长度大于一个分组
+        int flag = 1;
+        for (int i = 0; i < (int)strData.length() / RSA_Encrypt_length; i++)
+        {                                                                                  // 每次处理一个分组,循环读取RSA_Encrypt_length长度分组进行加密
+            std::string Data = strData.substr(i * RSA_Encrypt_length, RSA_Encrypt_length); // 一个分组
+            int ret = RSA_public_encrypt(Data.length(), (const unsigned char *)Data.c_str(),
+                                         (unsigned char *)pEncode, pRSAPublicKey, RSA_PKCS1_PADDING);
+            if (ret >= 0)
+            {
+                strRet += std::string(pEncode, ret);
+            }
+            else
+            { // 加密失败，密文重置为""，跳出循环
+                strRet = "";
+                flag = 0;
+                break;
+            }
+        }
+
+        if (strData.length() % RSA_Encrypt_length != 0 && flag)
+        { // 最后一段不够一个分组的情况, 前面的分组均正常
+            std::string Data = strData.substr((strData.length() / RSA_Encrypt_length) * RSA_Encrypt_length,
+                                              strData.length() % RSA_Encrypt_length); // 最后一段
+            int ret = RSA_public_encrypt(Data.length(), (const unsigned char *)Data.c_str(),
+                                         (unsigned char *)pEncode, pRSAPublicKey, RSA_PKCS1_PADDING);
+            if (ret >= 0)
+            {
+                strRet += std::string(pEncode, ret);
+            }
+            else
+            { // 加密失败, 密文重置为"";
+                strRet = "";
+            }
+        }
+    }
+    // 释放资源
+    delete[] pEncode;
+    EVP_PKEY_free(evp_key);
+    X509_free(cert);
+    RSA_free(pRSAPublicKey);
+    fclose(hPubKeyFile);
+    CRYPTO_cleanup_all_ex_data();
+    return strRet;
+}
+
+TEST_F(cryptoTest, cryptoSaveUserKey){
+	std::stringstream buffer("y\nn\n");	//重定向输入，一行测试一次，
+    std::streambuf * old = std::cin.rdbuf(buffer.rdbuf());
+    
+	abe_crypto crypto("testabe@%");
+	bool res = crypto.import_sk(rsa_sk_path);
+	EXPECT_EQ(true, res);
+	if(res){
+		std::string msg_raw = "test";//假设这是密钥
+		std::string data_cipher = my_RSA_Encrypt(rsa_cert_path, msg_raw);
+		if(data_cipher != ""){
+			size_t msg_len = data_cipher.length();
+			unsigned char * msg_b64 = (unsigned char*)malloc(base64_utils::b64_enc_len(msg_len));
+			size_t msg_b64_length = base64_utils::b64_encode(data_cipher.c_str(), msg_len, (char*)msg_b64);
+			string msg_b64_str((char*)msg_b64, msg_b64_length);
+
+
+			bool res2 = crypto.import_user_key(test_abe_key_path);
+			EXPECT_EQ(true, res2);
+			res2 = crypto.save_user_key(test_abe_key_path, msg_b64_str);//用户输入y
+			EXPECT_EQ(true, res2);
+			res2 = crypto.save_user_key(test_abe_key_path, msg_b64_str);//用户输入n
+			EXPECT_EQ(false, res2);
+
+			//测试解密失败的情形
+			res2 = crypto.import_sk(db_sk_path);
+			EXPECT_EQ(true, res2);
+			res2 = crypto.save_user_key(test_abe_key_path, msg_b64_str);//解密密钥和加密密钥不匹配
+			EXPECT_EQ(false, res2);
+		}
+	}
+	std::cin.rdbuf(old);
 }
