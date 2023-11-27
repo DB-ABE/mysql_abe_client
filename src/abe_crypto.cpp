@@ -106,20 +106,18 @@ bool abe_crypto::save_user_key(string key_path, string key_str_b64){
     }
     free(key_str);
 
+    if(user.user_key != ""){
+        string decide = "";
+        std::cout << "You already have abe key, do you want to update it?(Y/n)";
+        if(!std::getline(std::cin, decide) || (decide != "y" && decide != "Y" && decide != "")){
+            return false;
+        }
+    }
     //写入abe_user_key
     std::ofstream ofs_key(key_path, std::ios::out);
     if(!ofs_key){
         ABE_ERROR2("error opening user key-file.\nkey_path=" , key_path);
         return false;
-    }
-
-    if(user.user_key != ""){
-        string decide = "";
-        std::cout << "You already have abe key, do you want to update it?(Y/n)";
-        if(!std::getline(std::cin, decide) || (decide != "y" && decide != "Y" && decide != "")){
-            ofs_key.close();
-            return false;
-        }
     }
     ofs_key << pt;
     user.user_key = pt;

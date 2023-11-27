@@ -43,7 +43,7 @@ std::string trim(std::string text)
 bool check(const std::string str){
 	std::string s = str;
 	trim(s);
-	if(s.empty()){
+	if(s.empty() || s[0] == '#'){
 		return false;
 	}
 	return true;
@@ -103,12 +103,12 @@ std::map<std::string, std::string> get_configs(std::string fname) {
  
 	//添加默认配置
 	//如果配置文件中的key都是正常设置了的，那么下面的insert代码都不会生效
-    maps.insert({ "ca_cert_path", "certs/cacert" });
-    maps.insert({ "cert_path", "certs/cert" });
-	maps.insert({ "rsa_sk_path", "certs/rsa_sk" });
-	maps.insert({ "abe_key_path","certs/abe_key" });
-	maps.insert({ "abe_pp_path", "abe_pp" });
-    maps.insert({ "abe_kms_ip", "1.2.3.4" });
-    maps.insert({ "abe_kms_port", "1234" });
+    // maps.insert({ "ca_cert_path", "certs/cacert" });
+    // maps.insert({ "cert_path", "certs/cert" });
+	// maps.insert({ "rsa_sk_path", "certs/rsa_sk" });
+	// maps.insert({ "abe_key_path","certs/abe_key" });
+	// maps.insert({ "abe_pp_path", "abe_pp" });
+    // maps.insert({ "abe_kms_ip", "1.2.3.4" });
+    // maps.insert({ "abe_kms_port", "1234" });
 	return maps;
 }
