@@ -30,7 +30,6 @@ struct parameters{
     string config_file_path;    //config文件路径，可由命令行参数指定
 };
 
-bool read_config_file(struct parameters &params);
-bool read_opt(struct parameters &params, int argc, char *argv[]);
+bool init_params(struct parameters &params, int argc, char *argv[]);
 
 #endif

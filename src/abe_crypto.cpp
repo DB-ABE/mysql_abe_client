@@ -311,22 +311,6 @@ bool abe_crypto::rsa_decrypt(const string ct, string &pt){
                 break;
             }
         }
-        if (ct.length() % RSA_Decrypt_length != 0 && flag)
-        {
-            std::string Data = ct.substr((ct.length() / RSA_Decrypt_length) * RSA_Decrypt_length,
-                                              ct.length() % ct.length());
-            int ret = RSA_private_decrypt(Data.length(), (const unsigned char *)Data.c_str(),
-                                          (unsigned char *)pDecode, sk, RSA_PKCS1_PADDING);
-            if (ret >= 0)
-            {
-                pt += std::string(pDecode, ret);
-            }
-            else
-            {
-                pt = "";
-                flag = false;
-            }
-        }
     }
 
     delete[] pDecode;

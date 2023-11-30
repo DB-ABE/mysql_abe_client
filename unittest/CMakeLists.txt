@@ -52,3 +52,5 @@ add_test(NAME test_rewrite COMMAND test_rewrite)
 
 install(DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/data 
         DESTINATION ${CMAKE_BINARY_DIR})
+install(DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/config/congfig.txt
+        DESTINATION ${CMAKE_BINARY_DIR})

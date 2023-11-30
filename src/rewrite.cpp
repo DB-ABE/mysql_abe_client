@@ -80,16 +80,16 @@ bool rewrite_plan::parse_and_rewrite(){
     switch (com_type)
     {
         case COM_SELECT:{
-            std::cout << "select statement" << std::endl;
+            // std::cout << "select statement" << std::endl;
             
             select_handler(real_sql, raw_sql);
-            std::cout << "after replace: " << real_sql << std::endl;
+            // std::cout << "after replace: " << real_sql << std::endl;
             break;
         }
         case COM_INSERT:{
-            std::cout << "insert statement" << std::endl;
+            // std::cout << "insert statement" << std::endl;
             insert_handler(real_sql, raw_sql);
-            std::cout << "after replace: " << real_sql << std::endl;
+            // std::cout << "after replace: " << real_sql << std::endl;
             break;
         }
         case COM_GET_ABE_KEY:{

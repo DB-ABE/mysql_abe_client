@@ -2,7 +2,6 @@
 #include <string>
 using std::string;
 
-#define CONFIG_FILE "config.txt"
 #define ERR_LOG_RET(x) std::cerr << (x) << std::endl;return false;
 
 
@@ -115,8 +114,7 @@ bool read_config_file(struct parameters &params){
 }
 
 cxxopts::ParseResult parse_opt(int argc, char *argv[]);
-bool read_opt(struct parameters &params, int argc, char *argv[]){
-    auto opts = parse_opt(argc, argv);
+void read_opt(struct parameters &params, const cxxopts::ParseResult &opts){
 
     string username, password, host, database;
     unsigned int port;
@@ -133,12 +131,14 @@ bool read_opt(struct parameters &params, int argc, char *argv[]){
     params.database = database;
 
     params.config_file_path = opts["config"].as<string>();
-    return true;
+}
 
+void read_opt_config(struct parameters &params, const cxxopts::ParseResult &result){
+    params.config_file_path =  result["config"].as<string>();
 }
 
 //解析命令行参数
-cxxopts::ParseResult parse_opt(int argc, char *argv[]){
+bool parse_opt(cxxopts::ParseResult &result, int argc, char *argv[]){
     cxxopts::Options options("abe_client", "A demo of abe client for mysql");
 
     options.add_options()
@@ -147,12 +147,12 @@ cxxopts::ParseResult parse_opt(int argc, char *argv[]){
         ("h,host", "the hostname of the database server", cxxopts::value<string>()->default_value("127.0.0.1"))
         ("P,port", "the port of the database server", cxxopts::value<unsigned int>()->default_value("3306"))
         ("D,database", "the database you want to connect", cxxopts::value<string>()->default_value("mysql"))
-        ("config", "the config file path", cxxopts::value<string>()->default_value("./config.txt"))
+        ("config", "the config file path", cxxopts::value<string>()->default_value("config.txt"))
         ("help", "print this usage info")
     ;
     options.allow_unrecognised_options();
 
-    auto result = options.parse(argc, argv);
+    result = options.parse(argc, argv);
 
     for(auto it :result.unmatched()){
         std::cerr << "unrecognised option: " << it << std::endl;
@@ -161,14 +161,26 @@ cxxopts::ParseResult parse_opt(int argc, char *argv[]){
     if (result.count("help"))
     {
       std::cout << options.help() << std::endl;
-      exit(0);
+      return false;
     }
 
     if(result.count("username") == 0 || result.count("password") == 0){
         std::cerr << "error: both -u/--username and -p/--password are required." << std::endl;
         std::cout << options.help() << std::endl;
-        exit(0);
+        return false;
     }
-    return result;
+    return true;
 }
 
+bool init_params(struct parameters &params, int argc, char *argv[]){
+    cxxopts::ParseResult result;
+    if(!parse_opt(result, argc, argv)){
+        return false;
+    }
+    read_opt_config(params, result);//读取config文件路径
+    if(!read_config_file(params)){
+        return false;
+    }
+    read_opt(params, result);
+    return true;    
+}

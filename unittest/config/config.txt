@@ -1,0 +1,13 @@
+base_dir=./data/
+
+ca_cert_path=certs/cacert.pem
+cert_path=certs/testabe@%cert.pem
+kms_cert_path=certs/kmscert.pem
+db_cert_path=certs/dbcert.pem
+
+rsa_sk_path=prikey/testabe@%.pem
+
+abe_key_path=abe/abe_key
+abe_pp_path=abe/abe_pp
+abe_kms_ip=172.17.0.9
+abe_kms_port=20001

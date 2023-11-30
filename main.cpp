@@ -184,8 +184,9 @@ int main(int argc, char *argv[])
     std::signal(SIGINT, handle_signal);
 
     struct parameters params;
-    read_config_file(params);
-    read_opt(params, argc, argv);
+    if(!init_params(params, argc, argv)){
+        return 0;
+    }
     
     abe_crypto my_abe("testabe@%");//暂时使用user1，之后需要通过select current_user()获取
     if(!my_abe.init(params.abe_pp_path, params.abe_key_path, 
