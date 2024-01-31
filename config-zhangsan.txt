@@ -1,13 +1,13 @@
 base_dir=./data/
 
 ca_cert_path=certs/CA_cert.pem
-cert_path=certs/testabe@%_cert.pem
+cert_path=certs/zhangsan@%_cert.pem
 kms_cert_path=certs/KMS_cert.pem
 db_cert_path=certs/DB_cert.pem
 
-rsa_sk_path=prikey/testabe@%_prikey.pem
+rsa_sk_path=prikey/zhangsan@%_prikey.pem
 
-abe_key_path=abe/abe_key
+abe_key_path=abe/abe_key_zhangsan
 abe_pp_path=abe/abe_pp
 abe_kms_ip=172.17.0.9
 abe_kms_port=20001
